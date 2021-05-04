@@ -1,0 +1,173 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage[colorlinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\indicator}[1]{\mathrm{I}\left(#1\right)}
+\newcommand{\todo}[1]{{\color{red}To do: #1}}
+
+\author{Andrea Allais}
+\title{Bootstrap confidence intervals}
+\begin{document}
+\maketitle
+\section{Confidence interval}
+Let $f_\omega$ be a family of probability distributions with domain $D$,
+indexed by a vector of parameters $\omega \in \Omega$. Let $\theta: \Omega \to
+\mathbb{R}$ be a real-valued parameter. A lower confidence bound on $\theta$ is
+a function $\theta_{\mathrm{lo}} : D \times [0, 1] \to \mathbb{R}$ such that:
+\begin{equation} \label{eq:lower_bound_def}
+\int_{D} \indicator{\theta_{\mathrm{lo}}(x, \alpha) > \theta(\omega)} 
+f_\omega(x)\, \dd x \le \alpha \quad \forall\ \omega \in \Omega\,.
+\end{equation}
+
+In a similar way we can define the upper confidence bound:
+\begin{equation} \label{eq:upper_bound_def}
+\int_{D} \indicator{\theta_{\mathrm{hi}}(x, \alpha) < \theta(\omega)} 
+f_\omega(x)\, \dd x \le \alpha \quad \forall\ \omega \in \Omega\,.
+\end{equation}
+
+\section{One-parameter family of distributions}
+If the vector of parameters $\omega$ is a single real number, and
+$\theta(\omega)$ is invertible, we can use $\theta$ to index the family of
+distributions.
+
+Let $\hat{\theta}: D \to \mathbb{R}$ be an estimator of $\theta$, with
+differentiable cumulative distribution function $F(\cdot, \theta):\mathbb{R}
+\to [0,1]$. Let also $F$ be monotonically decreasing as a function of $\theta$.
+Then the inequalities \eqref{eq:lower_bound_def} and \eqref{eq:upper_bound_def}
+are satisfied and saturated by choosing $\theta_{\mathrm{lo}}(x, \alpha) =
+\theta_{\mathrm{lo}}(\hat{\theta}(x), \alpha)$, $\theta_{\mathrm{hi}}(x,
+\alpha) = \theta_{\mathrm{hi}}(\hat{\theta}(x), \alpha)$ and
+$\theta_{\mathrm{lo}}(\hat{\theta}, \alpha)$,
+$\theta_{\mathrm{hi}}(\hat{\theta}, \alpha)$ such that:
+\begin{equation}
+F\left(\hat{\theta}, \theta_\mathrm{lo}(\hat\theta, \alpha)\right) = 
+  1-\alpha\,, \quad
+F\left(\hat{\theta}, \theta_\mathrm{hi}(\hat\theta, \alpha)\right) = \alpha\,.
+\end{equation}
+
+\begin{proof}
+The confidence bound definition \eqref{eq:upper_bound_def} can be
+expressed in terms of $F$ as:
+
+\begin{equation}
+\int \indicator{\theta_{\mathrm{hi}}(\hat{\theta}, \alpha) < \theta} 
+\frac{\partial F}{\partial \hat{\theta}}\, \dd \hat{\theta} \le \alpha\,.
+\end{equation}
+
+Because $F$ is monotonically decreasing as a function of $\theta$, the
+integration domain $\hat\theta\ /\ \theta_{\mathrm{hi}}(\hat{\theta}, \alpha) <
+\theta$ is equivalent to $\hat\theta\ /\ F(\hat\theta, \theta) < \alpha$ (see
+fig.~\ref{fig:single_parameter_ci_construction}), and the inequality is
+satisfied and saturated:
+\begin{equation}
+\int \indicator{F(\hat\theta) < \alpha} 
+\frac{\partial F}{\partial \hat{\theta}}\, \dd \hat{\theta} = \alpha\,.
+\end{equation}
+
+The argument that $\theta_{\mathrm{lo}}$ satisfies \eqref{eq:lower_bound_def}
+follows a similar line.
+\end{proof}
+
+\begin{figure}
+\begin{center}
+\includegraphics{single_parameter_ci_construction.png}
+\end{center}
+\caption{\label{fig:single_parameter_ci_construction}
+The graph $(\hat\theta, \theta_{\mathrm{hi}})$ is the $\alpha$-level set of the
+cumulative distribution function $F$. For a given value of the parameter
+$\theta$, the integration domain $\hat\theta\ /\
+\theta_{\mathrm{hi}}(\hat{\theta}, \alpha) < \theta$ is equivalent to
+$\hat\theta\ /\ F(\hat\theta, \theta) < \alpha$.
+}
+\end{figure}
+
+\section{Bootstrap BCa}
+
+We assume that there is a monotonic function $m: (\theta, \hat \theta) \mapsto
+(\phi, \hat \phi)$ such that:
+\begin{equation}\label{eq:phi_hat_def}
+\frac{\hat \phi - \phi} {1 + a \phi} + z_0 = Z,\quad Z \sim N(0, 1)\,,
+\end{equation}
+or, equivalently, that the cumulative distribution function $G$ of $\hat \phi$
+is:
+\begin{equation}\label{eq:phi_hat_cdf}
+G(\hat\phi, \phi) = 
+    \Phi\left(\frac{\hat \phi - \phi} {1 + a \phi} + z_0\right)\,,
+\end{equation}
+where $\Phi$ is the normal cumulative distribution function.
+
+This distribution for $\hat \phi$ allows for a non-zero bias $z_0$, and
+non-constant variance $1 + a \phi$. We can use the construction above to obtain
+the confidence bounds:
+\begin{equation}
+\phi_\mathrm{lo}(\hat\phi, \alpha) =
+    \frac{\hat\phi + z_0 + \Phi^{-1}(\alpha)}
+         {1 - a \left (z_0 + \Phi^{-1}(\alpha) \right)}\,,
+\quad
+\phi_\mathrm{hi}(\hat\phi, \alpha) =
+    \frac{\hat\phi + z_0 - \Phi^{-1}(\alpha)}
+         {1 - a \left(z_0 - \Phi^{-1}(\alpha)\right)}\,.
+\end{equation}
+
+This distribution has the remarkable property that
+$G\left(\phi_\mathrm{lo}(\hat \phi, \alpha), \hat{\phi}\right)$ does not depend
+on $\hat \phi$, and the same is true for $\phi_{\mathrm{hi}}$. In fact:
+\begin{equation}\label{eq:G_phi_lo_phi_hat}
+\begin{aligned}
+&G\left(\phi_\mathrm{lo}(\hat \phi, \alpha), \hat{\phi}\right) =
+    \Phi\left(z_0 + \frac{z_0 + \Phi^{-1}(\alpha)}
+                         {1 - a \left (z_0 + \Phi^{-1}(\alpha) \right)}
+        \right)\,, \\
+&G\left(\phi_\mathrm{hi}(\hat \phi, \alpha), \hat{\phi}\right) =
+    \Phi\left(z_0 + \frac{z_0 - \Phi^{-1}(\alpha)}
+                         {1 - a \left (z_0 - \Phi^{-1}(\alpha) \right)}
+        \right)\,.
+\end{aligned}
+\end{equation}
+
+It's easy to verify this by substitution, but it may seems a bit magic. An
+alternative point of view can be gained by rewriting \eqref{eq:phi_hat_def} as:
+\begin{equation}
+\log (1 + a \hat \phi) = \log(1 + a \phi) + \log\left(1 + a (Z - z0)\right)\,.
+\end{equation}
+The cumulative distribution fuction $H$ of $\hat \zeta = \log(1 + a \hat
+\phi)$, parametrized by $\zeta = \log(1 + a \phi)$, is translationally
+invariant: $H(\hat \zeta, \zeta) = H(\hat \zeta - \zeta)$, so from the
+definition $H(\hat \zeta - \zeta_\mathrm{lo}) = \alpha$, it's immediately clear
+that $H(\zeta_\mathrm{lo}
+- \hat \zeta)$ does not depend on $\hat \zeta$.
+
+For any corresponding pairs $(\hat \theta, \theta)$ and $(\hat \phi, \phi)$
+under $m$, we have $F(\hat\theta, \theta) = G(\hat \phi, \phi)$. Thus the
+identities \eqref{eq:G_phi_lo_phi_hat} can be used to compute
+the confidence bounds on $\theta$ without knowledge of the map $m$: 
+\begin{equation}
+\begin{aligned}
+&\theta_\mathrm{lo}(\hat \theta, \alpha) =
+    F^{-1}\left(\Phi\left(z_0 + \frac{z_0 + \Phi^{-1}(\alpha)}
+                         {1 - a \left (z_0 + \Phi^{-1}(\alpha) \right)}
+        \right), \hat \theta \right)\,, \\
+&\theta_\mathrm{hi}(\hat \theta, \alpha) =
+    F^{-1}\left(\Phi\left(z_0 + \frac{z_0 - \Phi^{-1}(\alpha)}
+                         {1 - a \left (z_0 - \Phi^{-1}(\alpha) \right)}
+        \right), \hat \theta \right)\,,
+\end{aligned}
+\end{equation}
+provided, that is, that we can somehow obtain the coefficients $a$ and $z_0$.
+
+The bias coefficient $z_0$ is easy: from \eqref{eq:phi_hat_def} we have:
+\begin{equation}
+    F(\hat \theta, \hat \theta) = G(\hat \phi, \hat \phi) = \Phi(z_0),
+\end{equation}
+and hence
+\begin{equation}
+    z_0 = \Phi^{-1}\left(F(\hat \theta, \hat \theta)\right)\,.
+\end{equation}
+
+
+
+\end{document}
