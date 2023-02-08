@@ -1,0 +1,337 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{graphicx, caption}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+}
+\captionsetup{width=0.75\textwidth, font=small}
+
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\Tr}[1]{\mathrm{Tr}\left[{#1}\right]}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\ev}{\mathrm{E}}
+\newcommand{\cov}{\mathrm{cov}}
+\newcommand{\ee}{\mathrm{e}}
+\newcommand{\eye}{\mathrm{I}}
+\newcommand{\transpose}{\mathrm{\scriptscriptstyle T}}
+\newcommand{\normalN}{\mathcal{N}}
+\newcommand{\normal}[2]{\normalN\left(#1|#2\right)}
+\newcommand{\bigNormal}[2]{\normalN\left(#1\big|#2\right)}
+\renewcommand{\vec}[1]{\boldsymbol{#1}}
+\title{Covariance intersection algorithm}
+\author{Andrea Allais}
+\date{}
+
+\pdfinfo{%
+  /Title    ()
+  /Author   ()
+  /Creator  ()
+  /Producer ()
+  /Subject  ()
+  /Keywords ()
+}
+
+\begin{document}
+\maketitle
+\section{The algorithm}
+
+This is an attempt at clarifying the covariance intersection algorithm
+introduced in \cite{julier1997} -- a nice but rather confusing paper. We also
+found \cite{chen2002} a helpful clarification.
+
+The covariance intersection algorithm allows to fuse two observations of the
+same parameter and establish an upper bound on the uncertainty on the combined
+estimate, even if the two observations are not independent.
+
+The algorithm is best understood from a frequentist point of view. There is an
+unknown parameter vector $x$, for which two different estimators $a$ and $b$
+are available. Both are random variables, meaning that their respective
+observation can be repeated at least in principle, and each repetition would
+yield a different value. 
+
+The algorithm assumes that the estimators $a$ and $b$ are unbiased:
+\begin{equation}
+E[a] = E[b] = x\,,
+\end{equation}
+and that an upper bound on their respective covariance is
+available\footnote{The inequality $A < B$ with matrices $A$, $B$ means that $B
+- A$ is positive definite, and $A \le B$ means that $B - A$ is positive
+semi-definite.}:
+\begin{equation}
+\cov \left[a, a^\transpose\right] \le P_{aa}\,,\quad
+\cov \left[b, b^\transpose\right] \le P_{bb}\,.
+\end{equation}
+
+However, they need not be independent, and the cross-covariance is unknown.
+
+The algorithm combines the estimators $a$ and $b$ to construct family of
+estimators $c(\omega)$ parametrized by $\omega \in [0, 1]$.  Each estimator
+$c(\omega)$ is unbiased, and the algorithm also produces an upper bound
+$P_{cc}(\omega)$ on its covariance:
+\begin{equation}
+    E[c(\omega)] = x\,,\quad
+    \cov \left[c(\omega), c^\transpose(\omega)\right] \le P_{cc}(\omega)\,.
+\end{equation}
+
+Importantly, the bound $P_{cc}$ holds regardless of the value of the
+cross-covariance $\cov(a, b^\transpose)$, which is unknown.
+
+An optimal value of $\omega$ may be chosen according to a preferred metric,
+such as minimizing the trace or the determinant of $P_{cc}$. Since the familiy
+of estimators $c(\omega)$ includes $a$ and $b$, the optimal $c(\omega)$ is at
+least as good as the best of $a$ and $b$.
+
+The estimator $c$ and the upper bound $P_{cc}$ are given by:
+\begin{align}
+&P_{cc}(\omega)^{-1} =\omega P_{aa}^{-1} + (1 - \omega) P_{bb}^{-1}\\
+&P_{cc}(\omega)^{-1}c(\omega) = \omega P_{aa}^{-1}a + (1 - \omega) P_{bb}^{-1}b
+\end{align}
+
+We prove that $c$ is unbiased in \ref{proof_c_is_unbiased} and that $P_{cc}$
+bounds its covariance in \ref{proof_pcc_bounds_covariance}.
+
+\section{A better estimator when the cross-covariance is known}
+
+If the covariance of the combined vector $(a, b)$ is bounded:
+\begin{equation}
+    \cov \left[
+    \begin{pmatrix}a\\b\end{pmatrix}, 
+\begin{pmatrix}a^\transpose & b^{\transpose}\end{pmatrix}\right] \le P = 
+\begin{pmatrix}
+    P_{aa} & P_{a b}\\
+    P_{ab}^\transpose & P_{b b}\\
+\end{pmatrix}
+\,,
+\end{equation}
+then it is possible to construct an unbiased estimator $d$ with a tighter bound
+than any of the estimators $c(\omega)$ produced by the covariance intersection
+algorithm:
+\begin{equation}
+    E[d] = x\,,\quad
+    \cov \left[d, d\right] \le P_{dd}\,.
+\end{equation}
+
+The estimator $d$ and the upper bound $P_{dd}$ are given by:
+\begin{align}
+&P_{dd}^{-1} =H^\transpose P^{-1} H\\
+&P_{dd}^{-1}d = H^\transpose P^{-1} \begin{pmatrix}a \\ b\end{pmatrix}\,,
+\end{align}
+where $H$ is the matrix:
+\begin{equation}
+H = \begin{pmatrix}I \\ I \end{pmatrix}\,.
+\end{equation}
+
+We prove that $d$ is unbiased in \ref{proof_d_is_unbiased} and that $P_{dd}$
+bounds its covariance in \ref{proof_pdd_bounds_covariance}.  We prove in
+\ref{proof_pdd_is_smaller_than_paa} that:
+\begin{equation}
+  P_{dd} \le P_{aa},\ P_{dd} \le P_{bb}\,,
+\end{equation}
+and consequently that:
+\begin{equation}
+    P_{dd}\le P_{cc}(\omega)\quad \forall\ \omega \in [0, 1]\,.
+\end{equation}
+
+More in general, it is possible to establish an upper bound on the covariance
+of any unbiased estimator that depends linearly on $a$ and $b$. We prove in
+\ref{proof_d_is_optimal} that, among all these estimators, $d$ has the upper
+bound  $P_{dd}$ with the smallest trace.
+
+\section{Geometric interpretation}
+
+It is helpful to visualize the covariance upper bounds in terms of their
+covariance ellipses.
+
+\begin{figure}
+\begin{center}
+\includegraphics[scale=1]{geometric_interpretation.png}
+\caption{
+\label{figure_geometric_interpretation}
+In solid black the covariance ellipse for estimators $a$ and $b$. In dashed
+blue the covariance ellipses for estimators $c(\omega)$ for 6 equally spaced
+values of $\omega$ between 0 and 1. In dash-dot orange the covariance ellipse
+for estimator $d$.
+}
+\end{center}
+\end{figure}
+
+To any symmetric positive definite matrix $P\in \mathbb{R}^{n,n}$ we can
+associate a subset of $\mathbb{R}^n$ in the shape of an ellipse:
+\begin{equation}
+    B(P) = \{x\in\mathbb{R}^n\ /\ x^\transpose P^{-1} x <= 1\}\,,
+\end{equation}
+with the property that  $B(P_1)$ is included in $B(P_2)$ if and only if $P_1
+\le P_2$:
+\begin{equation}
+    P_1 \le P_2\ \Leftrightarrow\ B(P_1) \subseteq B(P_2)\,.
+\end{equation}
+
+As shown in Figure~\ref{figure_geometric_interpretation}, the ellipse
+$B(P_{dd})$ is always included in both $B(P_{aa})$ and $B(P_{bb})$, \emph{i.e.}
+it lies entirely within their intersection. The ellipses $B(P_{cc}(\omega))$
+smoothly interpolate between $B(P_{aa})$ and $B(P_{bb})$. Moreover,
+$B(P_{cc}(\omega))$ always contains the entire intersection of $B(P_{aa})$ and
+$B(P_{bb})$. This property gives the name to the algorithm, and we prove it in
+section \ref{proof_pcc_contains_intersection}.
+
+\section{Proofs}
+\subsection{$c$ is unbiased}
+\label{proof_c_is_unbiased}
+\begin{align}
+P_{cc}^{-1}E[c] &= \omega P_{aa}^{-1}E[a] + (1 - \omega) P_{bb}^{-1}E[b] \\
+                &= \omega P_{aa}^{-1}x + (1 - \omega) P_{bb}^{-1}x \\
+                &= P_{cc}^{-1}x
+\end{align}
+
+\subsection{$P_{cc}$ bounds the covariance of $c$}
+\label{proof_pcc_bounds_covariance}
+
+Multiplying the thesis $\cov[c, c^\transpose] \leq P_{cc}$ left and right by
+$P_{cc}^{-1}$ we have:
+\begin{align}
+    \Delta \equiv P_{cc}^{-1} - \cov[P_{cc}^{-1} c, c^{\transpose} P_{cc}^{-1}] \geq 0\,.
+\end{align}
+
+Using the definition of $c$:
+\begin{align}
+\Delta =\
+&P_{cc}^{-1} - \omega^2P_{aa}^{-1}\cov[a, a^\transpose] P_{aa}^{-1} \\
+&- (1-\omega)^2P_{bb}^{-1}\cov[b, b^\transpose] P_{bb}^{-1} \\
+&- \omega(1-\omega)P_{bb}^{-1}\cov[b, a^\transpose] P_{aa}^{-1}\\
+&- \omega(1-\omega)P_{aa}^{-1}\cov[a, b^\transpose] P_{bb}^{-1}\,.
+\end{align}
+
+Using the bounds on the covariance of $a$ and $b$:
+\begin{align}
+\Delta \ge\
+&P_{cc}^{-1} - \omega^2P_{aa}^{-1} - (1-\omega)^2P_{bb}^{-1} \\
+&- \omega(1-\omega)P_{bb}^{-1}\cov[b, a^\transpose] P_{aa}^{-1}\\
+&- \omega(1-\omega)P_{aa}^{-1}\cov[a, b^\transpose] P_{bb}^{-1}\,.
+\end{align}
+
+Substituting the explicit expression for $P_{cc}$ and collecting similar terms:
+\begin{align}
+\Delta \ge\ \omega(1-\omega) \Big[&
+    P_{aa}^{-1}P_{aa}P_{aa}^{-1} + P_{bb}^{-1}P_{bb}P_{bb}^{-1} \\
+&- P_{bb}^{-1}\cov[b, a^\transpose] P_{aa}^{-1}- P_{aa}^{-1}\cov[a, b^\transpose] P_{bb}^{-1} \Big]\,.
+\end{align}
+
+Using the bounds on the covariance of $a$ and $b$ a second time:
+\begin{align}
+\Delta \ge\ \omega(1-\omega) \Big[&
+    P_{aa}^{-1}\cov[a, a^\transpose]P_{aa}^{-1} + P_{bb}^{-1}\cov[b, b^\transpose] P_{bb}^{-1} \\
+&- P_{bb}^{-1}\cov[b, a^\transpose] P_{aa}^{-1}- P_{aa}^{-1}\cov[a, b^\transpose] P_{bb}^{-1} \Big]\,,
+\end{align}
+and finally:
+\begin{align}
+\Delta \ge\ \omega(1-\omega)\ \cov\left[
+P_{aa}^{-1}a - P_{bb}^{-1}b, a^\transpose P_{aa}^{-1} - b^\transpose P_{bb}^{-1}\right] \geq 0\,.
+\end{align}
+
+
+\subsection{$d$ is unbiased}
+\label{proof_d_is_unbiased}
+
+\begin{align}
+    P_{dd}^{-1}E[d] &= H^\transpose P^{-1} \begin{pmatrix}E[a]\\E[b]\end{pmatrix}
+    =H^\transpose P^{-1} \begin{pmatrix}x\\x\end{pmatrix}
+    =H^\transpose P^{-1} H x  = P_{dd}^{-1} x 
+\end{align}
+
+\subsection{$P_{dd}$ bounds the covariance of $d$}
+\label{proof_pdd_bounds_covariance}
+\begin{align}
+    P_{dd}^{-1} \cov[d, d^{\transpose}] P_{dd}^{-1} & =
+    H^{\transpose} P^{-1} \cov\left[\begin{pmatrix}a\\b\end{pmatrix}, 
+    \begin{pmatrix}a^\transpose & b^\transpose\end{pmatrix}\right]P^{-1}H \\
+    &\le H^{\transpose} P^{-1} PP^{-1}H = P_{dd}^{-1} P_{dd} P_{dd}^{-1}\,.
+\end{align}
+
+\subsection{$P_{dd}\le P_{aa},\ P_{bb},\ P_{cc}(\omega)$}
+\label{proof_pdd_is_smaller_than_paa}
+
+The thesis $P_{dd} \leq P_{aa}$ is equivalent to $P_{dd}^{-1} \geq
+P_{aa}^{-1}$. This is not entirely trivial, but not too hard to prove.
+
+We parametrize the inverse of $P$ as:
+\begin{equation}
+    P^{-1}=\begin{pmatrix}A_{aa}& A_{ab}\\ A_{ab}^\transpose & A_{bb} \end{pmatrix}\,,
+\end{equation}
+and use the block form of matrix inverse to express $P_{aa}$ in terms of this
+parametrization:
+\begin{equation}
+    P_{aa}^{-1} = A_{aa} - A_{ab} A_{bb}^{-1} A_{ab}^\transpose\,.
+\end{equation}
+
+Thus we have:
+\begin{align}
+    P_{dd}^{-1} - P_{aa}^{-1} &= H^\transpose P^{-1} H - P_{aa}^{-1} \\
+    &= A_{ab} + A_{ab}^\transpose + A_{bb} + A_{ab}A_{bb}^{-1}A_{ab}^\transpose\\
+    &=(A_{ab} + A_{bb})A_{bb}(A_{ab} + A_{bb})^\transpose \geq 0\,.
+\end{align}
+
+Similarly we can prove $P_{dd} \leq P_{bb}$, and consequently $P_{dd} \leq
+P_{cc}(\omega)$, since $P_{cc}^{-1}(\omega)$ is a convex combination of
+$P_{aa}^{-1}$ and $P_{bb}^{-1}$.
+
+\subsection{$d$ is optimal}
+\label{proof_d_is_optimal}
+We consider the family of estimators:
+\begin{equation}
+d(K) = K^\transpose\begin{pmatrix}a\\b\end{pmatrix}\,,
+\end{equation}
+parametrized by the matrix $K$.
+
+The covariance of $d(K)$ has the upper bound:
+\begin{equation}
+    \cov[d(K), d(K)^\transpose] \le K^\transpose P K\,,
+\end{equation}
+and $d(K)$ is unbiased if and only if the matrix $K$ satisfies the constraint:
+\begin{equation}
+    K^\transpose H = 1\,.
+\end{equation} 
+
+We want to find the matrix $K$ that minimizes the trace of the upper bound
+subject to this constraint, which we enforce using a matrix of Lagrange
+multipliers $\Lambda$:
+\begin{equation}
+    \delta_K\ \Tr{KPK^\transpose - 2\Lambda^\transpose(K^\transpose H - 1)} = 0\,.
+\end{equation}
+
+The saddle point equation is:
+\begin{equation}
+    KP - \Lambda H^\transpose = 0\,,
+\end{equation}
+which, together with the constraint equation yields:
+\begin{align}
+    &\Lambda = (H^\transpose P^{-1} H)^{-1} \\
+    &K = (H^\transpose P^{-1} H)^{-1}H^\transpose P^{-1}\,.
+\end{align}
+
+\subsection{$B(P_{cc})$ contains the intersection of $B(P_{aa})$ and $B(P_{bb})$}
+\label{proof_pcc_contains_intersection}
+
+\begin{align}
+    x \in B(P_{aa}) \cap B(P_{bb})\ &\Rightarrow\ x^\transpose P_{aa}^{-1}x \leq 1\ \land\ x^\transpose P_{bb}^{-1}x \leq 1\\
+    &\Rightarrow \omega x^\transpose P_{aa}^{-1}x + (1-\omega) x^\transpose P_{bb}^{-1}x \leq 1\\
+    &\Rightarrow x^\transpose P_{cc}^{-1}(\omega)x\leq 1\\
+    &\Rightarrow x \in B(P_{cc}(\omega))
+\end{align}
+
+
+\begin{thebibliography}{9}
+\bibitem{julier1997}
+  Julier, Uhlmann
+  \href{https://ieeexplore.ieee.org/iel3/4827/13338/00609105.pdf?casa_token=xmJ8y10BkucAAAAA:hHlQdYE1oL_zSZcqsOhZsctM8oaW9GocGzfjueZ5rj87BNId508xUH_bAQHqK1ncbRNzYZi4}{A non-divergent estimation algorithm in the presence of unknown correlations}, 
+  1997.
+\bibitem{chen2002}
+  Chen, Arambel, Mehra
+  \href{https://ieeexplore.ieee.org/document/1047015}{Estimation under unknown correlation: covariance intersection revisited}, 
+  2002.
+\end{thebibliography}
+\end{document}
