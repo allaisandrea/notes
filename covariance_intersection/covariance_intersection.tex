@@ -272,7 +272,7 @@ Thus we have:
 \begin{align}
     P_{dd}^{-1} - P_{aa}^{-1} &= H^\transpose P^{-1} H - P_{aa}^{-1} \\
     &= A_{ab} + A_{ab}^\transpose + A_{bb} + A_{ab}A_{bb}^{-1}A_{ab}^\transpose\\
-    &=(A_{ab} + A_{bb})A_{bb}(A_{ab} + A_{bb})^\transpose \geq 0\,.
+    &=(A_{ab} + A_{bb})A_{bb}^{-1}(A_{ab} + A_{bb})^\transpose \geq 0\,.
 \end{align}
 
 Similarly we can prove $P_{dd} \leq P_{bb}$, and consequently $P_{dd} \leq
@@ -293,14 +293,14 @@ The covariance of $d(K)$ has the upper bound:
 \end{equation}
 and $d(K)$ is unbiased if and only if the matrix $K$ satisfies the constraint:
 \begin{equation}
-    K^\transpose H = 1\,.
+    K^\transpose H = I\,.
 \end{equation} 
 
 We want to find the matrix $K$ that minimizes the trace of the upper bound
 subject to this constraint, which we enforce using a matrix of Lagrange
 multipliers $\Lambda$:
 \begin{equation}
-    \delta_K\ \Tr{KPK^\transpose - 2\Lambda^\transpose(K^\transpose H - 1)} = 0\,.
+    \delta_K\ \Tr{KPK^\transpose - 2\Lambda^\transpose(K^\transpose H - I)} = 0\,.
 \end{equation}
 
 The saddle point equation is:
